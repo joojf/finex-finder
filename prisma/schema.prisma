@@ -10,53 +10,52 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model User {
-    id        String   @id @default(cuid())
+model user {
+    id        BigInt   @id @default(autoincrement())
     email     String   @unique
     password  String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     // Relations
-    expert   Expert?
-    business Business?
-    sessions Session[]
+    expert   expert?
+    business business?
+    sessions session[]
 }
 
-model Session {
-    id        String   @id @default(cuid())
-    userId    String
+model session {
+    id        BigInt   @id @default(autoincrement())
+    userId    BigInt
     token     String   @unique
     expires   DateTime
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user user @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Expert {
-    id                  String   @id @default(cuid())
-    userId              String   @unique
+model expert {
+    id                  BigInt                   @id @default(autoincrement())
+    userId              BigInt                   @unique
     name                String
     profilePicture      String?
     professionalTitle   String
     yearsOfExperience   Int
-    areasOfExpertise    String[]
-    certifications      String[]
-    hourlyRateMin       Float
-    hourlyRateMax       Float?
+    areasOfExpertise    FinancialExpertiseArea[]
+    certifications      FinancialCertification[]
+    hourlyRate          Float
     location            String
-    isRemote            Boolean  @default(false)
+    remoteOnly          Boolean                  @default(false)
     availability        Json?
-    bio                 String   @db.Text
-    professionalSummary String   @db.Text
+    bio                 String                   @db.Text
+    professionalSummary String                   @db.Text
     linkedinUrl         String?
     websiteUrl          String?
     languages           String[]
-    createdAt           DateTime @default(now())
-    updatedAt           DateTime @updatedAt
+    createdAt           DateTime                 @default(now())
+    updatedAt           DateTime                 @updatedAt
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user user @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum CompanySize {
@@ -65,9 +64,9 @@ enum CompanySize {
     LARGE
 }
 
-model Business {
-    id             String      @id @default(cuid())
-    userId         String      @unique
+model business {
+    id             BigInt      @id @default(autoincrement())
+    userId         BigInt      @unique
     companyName    String
     description    String      @db.Text
     industryType   String
@@ -80,5 +79,36 @@ model Business {
     createdAt      DateTime    @default(now())
     updatedAt      DateTime    @updatedAt
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum FinancialExpertiseArea {
+    INVESTMENT_MANAGEMENT
+    FINANCIAL_PLANNING
+    WEALTH_MANAGEMENT
+    RISK_MANAGEMENT
+    TAX_PLANNING
+    ESTATE_PLANNING
+    RETIREMENT_PLANNING
+    CORPORATE_FINANCE
+    MERGERS_AND_ACQUISITIONS
+    PRIVATE_EQUITY
+    VENTURE_CAPITAL
+    REAL_ESTATE_INVESTMENT
+    PORTFOLIO_MANAGEMENT
+    ASSET_ALLOCATION
+    ESG_INVESTING
+    CRYPTOCURRENCY
+}
+
+enum FinancialCertification {
+    CFA
+    CFP
+    CPA
+    CHFC
+    CAIA
+    FRM
+    SERIES_7
+    SERIES_63
+    SERIES_65
 }

@@ -1,10 +1,12 @@
-import { Certification, FinancialExpertiseArea } from "~/server/api/routers/auth";
+import { FinancialExpertiseArea, FinancialCertification } from "@prisma/client";
+import { UseFormReturn } from "node_modules/react-hook-form/dist/types";
+import { ProfessionalInfoFormData } from "~/types/expert-form";
 
 interface ProfessionalInfoStepProps {
-    form: any;
+    form: UseFormReturn<ProfessionalInfoFormData>;
 }
 
-const FINANCIAL_EXPERTISE_AREAS_DISPLAY: Record<keyof typeof FinancialExpertiseArea.enum, string> = {
+const FINANCIAL_EXPERTISE_AREAS_DISPLAY: Record<keyof typeof FinancialExpertiseArea, string> = {
     INVESTMENT_MANAGEMENT: "Investment Management",
     FINANCIAL_PLANNING: "Financial Planning",
     WEALTH_MANAGEMENT: "Wealth Management",
@@ -23,7 +25,7 @@ const FINANCIAL_EXPERTISE_AREAS_DISPLAY: Record<keyof typeof FinancialExpertiseA
     CRYPTOCURRENCY: "Cryptocurrency"
 };
 
-const CERTIFICATIONS_DISPLAY: Record<keyof typeof Certification.enum, string> = {
+const CERTIFICATIONS_DISPLAY: Record<keyof typeof FinancialCertification, string> = {
     CFA: "CFA (Chartered Financial Analyst)",
     CFP: "CFP (Certified Financial Planner)",
     CPA: "CPA (Certified Public Accountant)",

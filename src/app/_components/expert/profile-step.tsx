@@ -1,5 +1,8 @@
+import { UseFormReturn } from "react-hook-form";
+import { ProfileFormData } from "~/types/expert-form";
+
 interface ProfileStepProps {
-    form: any;
+    form: UseFormReturn<ProfileFormData>;
 }
 
 export function ProfileStep({ form }: ProfileStepProps) {

@@ -1,5 +1,8 @@
+import { UseFormReturn } from "react-hook-form";
+import { PersonalInfoFormData } from "~/types/expert-form";
+
 interface PersonalInfoStepProps {
-    form: any;
+    form: UseFormReturn<PersonalInfoFormData>;
 }
 
 const AVAILABLE_LANGUAGES = [

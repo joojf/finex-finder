@@ -7,15 +7,16 @@ import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, CheckCircle2 } from "lucide-react";
-import { AccountDetailsStep } from "~/app/_components/expert/account-details-step";
+import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { AccountDetailsStep } from "~/app/_components/shared/account-details-step";
 import { PersonalInfoStep } from "~/app/_components/expert/personal-info-step";
 import { ProfessionalInfoStep } from "~/app/_components/expert/professional-info-step";
 import { ProfileStep } from "~/app/_components/expert/profile-step";
 import { TRPCClientError } from '@trpc/client';
+import { FinancialCertification, FinancialExpertiseArea } from "@prisma/client";
+import { AccountDetailsForm, ProfileFormData, PersonalInfoFormData, ProfessionalInfoFormData } from "~/types/expert-form";
 
 const expertSchema = z.object({
-    // Step 1: Account Details
     email: z.string().email("Invalid email address"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
@@ -25,7 +26,6 @@ const expertSchema = z.object({
 });
 
 const personalInfoSchema = z.object({
-    // Step 2: Personal Information
     name: z.string().min(2, "Name is required"),
     professionalTitle: z.string().min(2, "Professional title is required"),
     location: z.string().min(2, "Location is required"),
@@ -34,15 +34,13 @@ const personalInfoSchema = z.object({
 });
 
 const professionalInfoSchema = z.object({
-    // Step 3: Professional Information
     yearsOfExperience: z.number().min(0),
-    areasOfExpertise: z.array(z.string()).min(1, "Select at least one area of expertise"),
-    certifications: z.array(z.string()),
+    areasOfExpertise: z.array(z.nativeEnum(FinancialExpertiseArea)).min(1, "Select at least one area of expertise"),
+    certifications: z.array(z.nativeEnum(FinancialCertification)),
     hourlyRate: z.number().positive("Hourly rate is required"),
 });
 
 const profileSchema = z.object({
-    // Step 4: Profile Details
     bio: z.string().min(50, "Bio must be at least 50 characters"),
     professionalSummary: z.string().min(50, "Professional summary must be at least 50 characters"),
     linkedinUrl: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
@@ -63,10 +61,10 @@ const ProgressBar = ({ currentStep }: { currentStep: number }) => (
                 <div key={step.title} className="flex flex-col items-center">
                     <div
                         className={`h-8 w-8 rounded-full ${index < currentStep
-                                ? "bg-destructive"
-                                : index === currentStep
-                                    ? "bg-primary"
-                                    : "bg-muted"
+                            ? "bg-destructive"
+                            : index === currentStep
+                                ? "bg-primary"
+                                : "bg-muted"
                             } flex items-center justify-center text-white`}
                     >
                         {index < currentStep ? (
@@ -96,24 +94,24 @@ export default function ExpertRegistrationPage() {
     });
 
     const forms = [
-        useForm({ resolver: zodResolver(expertSchema) }),
-        useForm({ resolver: zodResolver(personalInfoSchema) }),
-        useForm({ resolver: zodResolver(professionalInfoSchema) }),
-        useForm({ resolver: zodResolver(profileSchema) }),
+        useForm<AccountDetailsForm>({ resolver: zodResolver(expertSchema) }),
+        useForm<PersonalInfoFormData>({ resolver: zodResolver(personalInfoSchema) }),
+        useForm<ProfessionalInfoFormData>({ resolver: zodResolver(professionalInfoSchema) }),
+        useForm<ProfileFormData>({ resolver: zodResolver(profileSchema) }),
     ] as const;
 
     const currentForm = forms[step]!;
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: AccountDetailsForm | PersonalInfoFormData | ProfessionalInfoFormData | ProfileFormData) => {
         setServerError(null);
-        
+
         if (step < steps.length - 1) {
             setFormData({ ...formData, ...data });
             setStep(step + 1);
         } else {
             const finalData = { ...formData, ...data };
             try {
-                await registerExpert.mutateAsync(finalData);
+                await registerExpert.mutateAsync(finalData as AccountDetailsForm & PersonalInfoFormData & ProfessionalInfoFormData & ProfileFormData);
             } catch (error) {
                 if (error instanceof TRPCClientError) {
                     setServerError(error.message);
@@ -126,13 +124,21 @@ export default function ExpertRegistrationPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
-            <div className="container mx-auto max-w-3xl">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="container mx-auto max-w-3xl py-12">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl bg-white p-8 shadow-xl"
+                    className="rounded-xl bg-white p-8 shadow-xl relative"
                 >
+                    <button
+                        onClick={() => router.back()}
+                        className="absolute left-4 top-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        type="button"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                    </button>
+
                     <h1 className="mb-6 text-center text-3xl font-bold">
                         Expert Registration
                     </h1>
@@ -155,16 +161,16 @@ export default function ExpertRegistrationPage() {
                                 transition={{ duration: 0.3 }}
                             >
                                 {step === 0 && (
-                                    <AccountDetailsStep form={currentForm} />
+                                    <AccountDetailsStep form={forms[0]} />
                                 )}
                                 {step === 1 && (
-                                    <PersonalInfoStep form={currentForm} />
+                                    <PersonalInfoStep form={forms[1]} />
                                 )}
                                 {step === 2 && (
-                                    <ProfessionalInfoStep form={currentForm} />
+                                    <ProfessionalInfoStep form={forms[2]} />
                                 )}
                                 {step === 3 && (
-                                    <ProfileStep form={currentForm} />
+                                    <ProfileStep form={forms[3]} />
                                 )}
                             </motion.div>
                         </AnimatePresence>

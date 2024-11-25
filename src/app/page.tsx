@@ -17,14 +17,22 @@ type LoginForm = {
 
 export default function Home() {
   const { register, handleSubmit } = useForm<LoginForm>();
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data: LoginForm) => {
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: true,
-      callbackUrl: "/test",
-    });
+    setIsLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: true,
+        callbackUrl: "/test",
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -64,8 +72,8 @@ export default function Home() {
                 />
               </div>
               <div className="space-y-4">
-                <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  Login
+                <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isLoading}>
+                  {isLoading ? "Logging in..." : "Login"}
                 </Button>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <Link href="/register/business" className="hover:text-foreground transition-colors">

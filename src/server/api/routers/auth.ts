@@ -2,37 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { db } from "~/server/db";
 import argon2 from "argon2";
-
-export const FinancialExpertiseArea = z.enum([
-    "INVESTMENT_MANAGEMENT",
-    "FINANCIAL_PLANNING",
-    "WEALTH_MANAGEMENT",
-    "RISK_MANAGEMENT",
-    "TAX_PLANNING",
-    "ESTATE_PLANNING",
-    "RETIREMENT_PLANNING",
-    "CORPORATE_FINANCE",
-    "MERGERS_AND_ACQUISITIONS",
-    "PRIVATE_EQUITY",
-    "VENTURE_CAPITAL",
-    "REAL_ESTATE_INVESTMENT",
-    "PORTFOLIO_MANAGEMENT",
-    "ASSET_ALLOCATION",
-    "ESG_INVESTING",
-    "CRYPTOCURRENCY"
-]);
-
-export const Certification = z.enum([
-    "CFA",
-    "CFP",
-    "CPA",
-    "CHFC",
-    "CAIA",
-    "FRM",
-    "SERIES_7",
-    "SERIES_63",
-    "SERIES_65"
-]);
+import { FinancialExpertiseArea, CompanySize, FinancialCertification } from "@prisma/client";
 
 export const expertSchema = z.object({
     email: z.string().email(),
@@ -40,8 +10,8 @@ export const expertSchema = z.object({
     name: z.string().min(2),
     professionalTitle: z.string().min(2),
     yearsOfExperience: z.number().min(0),
-    areasOfExpertise: z.array(FinancialExpertiseArea),
-    certifications: z.array(Certification),
+    areasOfExpertise: z.array(z.nativeEnum(FinancialExpertiseArea)),
+    certifications: z.array(z.nativeEnum(FinancialCertification)),
     hourlyRate: z.number().positive(),
     location: z.string(),
     remoteOnly: z.boolean(),
@@ -52,14 +22,51 @@ export const expertSchema = z.object({
     languages: z.array(z.string()),
 });
 
+export const businessSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    companyName: z.string().min(2),
+    description: z.string().min(50),
+    industryType: z.string().min(2),
+    companySize: z.nativeEnum(CompanySize),
+    location: z.string().min(2),
+    servicesNeeded: z.array(z.nativeEnum(FinancialExpertiseArea)).min(1),
+    budgetMin: z.number().positive(),
+    budgetMax: z.number().positive(),
+    timeline: z.string().min(2),
+}).refine((data) => data.budgetMax >= data.budgetMin, {
+    message: "Maximum budget must be greater than or equal to minimum budget",
+    path: ["budgetMax"],
+});
+
 export const authRouter = createTRPCRouter({
-    registerBusiness: publicProcedure.input(z.object({
-        email: z.string().email(),
-        password: z.string().min(8),
-    })).mutation(async ({ input }) => {
-        const user = await db.user.create({ data: input });
-        return user;
-    }),
+    registerBusiness: publicProcedure
+        .input(businessSchema)
+        .mutation(async ({ input }) => {
+            const hashedPassword = await argon2.hash(input.password);
+
+            const user = await db.user.create({
+                data: {
+                    email: input.email,
+                    password: hashedPassword,
+                    business: {
+                        create: {
+                            companyName: input.companyName,
+                            description: input.description,
+                            industryType: input.industryType,
+                            companySize: input.companySize,
+                            location: input.location,
+                            servicesNeeded: input.servicesNeeded,
+                            budgetMin: input.budgetMin,
+                            budgetMax: input.budgetMax,
+                            timeline: input.timeline,
+                        },
+                    },
+                },
+            });
+
+            return user;
+        }),
 
     registerExpert: publicProcedure
         .input(expertSchema)
